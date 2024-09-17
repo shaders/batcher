@@ -8,7 +8,7 @@ import (
 
 // Batcher is a structure that collects items and flushes buffer
 // either when the buffer fills up or when timeout is reached.
-// See batcher_test.go for usage example.
+// See examples/batcher/batcher.go for usage example.
 type Batcher[T any] struct {
 	ticker   *time.Ticker
 	capacity int
@@ -100,6 +100,9 @@ func (b *Batcher[T]) Close() {
 }
 
 func (b *Batcher[T]) makeBatch() {
+	if len(b.buffer) == 0 {
+		return
+	}
 	b.output <- b.buffer
 	b.buffer = make([]T, 0, b.capacity)
 }
