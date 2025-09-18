@@ -19,6 +19,7 @@ type Batcher[T any] struct {
 
 	mu     sync.Mutex
 	closed bool
+	timerReset   bool
 }
 
 // New creates a new instance of Batcher.
@@ -44,6 +45,13 @@ func New[T any](d time.Duration, capacity int) *Batcher[T] {
 			if obj.closed {
 				obj.mu.Unlock()
 				return
+			}
+
+			// Skip this tick if timer was just reset due to capacity flush
+			if obj.timerReset {
+				obj.timerReset = false
+				obj.mu.Unlock()
+				continue
 			}
 
 			obj.makeBatch()
@@ -76,6 +84,7 @@ func (b *Batcher[T]) AddE(item T) error {
 	if len(b.buffer) >= b.capacity {
 		b.makeBatch()
 		// Reset the timer since we just flushed due to capacity
+		b.timerReset = true
 		b.ticker.Reset(b.duration)
 	}
 
