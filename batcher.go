@@ -11,6 +11,7 @@ import (
 // See examples/batcher/batcher.go for usage example.
 type Batcher[T any] struct {
 	ticker   *time.Ticker
+	duration time.Duration
 	capacity int
 
 	buffer []T
@@ -29,6 +30,7 @@ func New[T any](d time.Duration, capacity int) *Batcher[T] {
 	obj := &Batcher[T]{}
 
 	obj.ticker = time.NewTicker(d)
+	obj.duration = d
 	obj.capacity = capacity
 
 	obj.buffer = make([]T, 0, obj.capacity)
@@ -73,6 +75,8 @@ func (b *Batcher[T]) AddE(item T) error {
 	b.buffer = append(b.buffer, item)
 	if len(b.buffer) >= b.capacity {
 		b.makeBatch()
+		// Reset the timer since we just flushed due to capacity
+		b.ticker.Reset(b.duration)
 	}
 
 	return nil
